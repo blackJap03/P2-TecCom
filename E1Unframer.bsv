@@ -26,9 +26,9 @@ module mkE1Unframer(E1Unframer);
     Reg#(Bit#(8)) cur_byte <- mkReg(0);
 
     // Sequências de FAS e NFAS
-    Bit#(7) FAS_PATTERN = 7'b0011011;
-    Bit#(7) NFAS_MASK = 7'b0111111; // O segundo bit deve ser 1
-    Bit#(7) NFAS_VALID = 7'b0100000;
+    let FAS_PATTERN = 7'b0011011;
+    let NFAS_MASK = 7'b0111111; // O segundo bit deve ser 1
+    let NFAS_VALID = 7'b0100000;
 
     interface out = toGet(fifo_out);
 
