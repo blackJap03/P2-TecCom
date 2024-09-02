@@ -27,8 +27,8 @@ module mkE1Unframer(E1Unframer);
 
     // Sequências de FAS e NFAS
     let fas_pattern = 7'b0011011;
-    let nfas_mask = 8'b01111111; // O segundo bit deve ser 1
-    let nfas_valid = 8'b01000000;
+    let nfas_mask = 8'h7F; // 01111111 em binário
+    let nfas_valid = 8'h40; // 01000000 em binário
 
     interface out = toGet(fifo_out);
 
@@ -51,7 +51,8 @@ module mkE1Unframer(E1Unframer);
 
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um NFAS válido
-                        if ((cur_byte & nfas_mask) == nfas_valid) begin
+                        Bit#(8) nfas_check = cur_byte & nfas_mask;
+                        if (nfas_check == nfas_valid) begin
                             state <= FIRST_NFAS;
                         end else begin
                             state <= UNSYNCED;
@@ -94,7 +95,8 @@ module mkE1Unframer(E1Unframer);
                             end
                         end else begin
                             // Verificar se a máscara corresponde ao valor esperado para NFAS
-                            if ((cur_byte & nfas_mask) != nfas_valid) begin
+                            Bit#(8) nfas_check = cur_byte & nfas_mask;
+                            if (nfas_check != nfas_valid) begin
                                 state <= UNSYNCED;
                             end
                         end
