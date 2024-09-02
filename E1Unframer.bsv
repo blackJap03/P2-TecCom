@@ -44,7 +44,7 @@ module mkE1Unframer(E1Unframer);
                         cur_bit <= 0;
                     end
                 end
-                
+
                 FIRST_FAS: begin
                     cur_ts <= cur_ts + 1;
                     cur_bit <= cur_bit + 1;
@@ -60,7 +60,7 @@ module mkE1Unframer(E1Unframer);
                         cur_bit <= 0;
                     end
                 end
-    
+
                 FIRST_NFAS: begin
                     cur_ts <= cur_ts + 1;
                     cur_bit <= cur_bit + 1;
@@ -93,7 +93,7 @@ module mkE1Unframer(E1Unframer);
                                 state <= UNSYNCED;
                             end
                         end else begin
-                            if ((cur_byte & nfas_mask) != nfas_valid) begin
+                            if (cur_byte & nfas_mask != nfas_valid) begin
                                 state <= UNSYNCED;
                             end
                         end
