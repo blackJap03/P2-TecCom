@@ -1,3 +1,21 @@
+import GetPut::*;
+import FIFOF::*;
+import Assert::*;
+
+typedef Bit#(TLog#(32)) Timeslot;
+
+interface E1Unframer;
+    interface Put#(Bit#(1)) in;
+    interface Get#(Tuple2#(Timeslot, Bit#(1))) out;
+endinterface
+
+typedef enum {
+    UNSYNCED,
+    FIRST_FAS,
+    FIRST_NFAS,
+    SYNCED
+} State deriving (Bits, Eq, FShow);
+
 module mkE1Unframer(E1Unframer);
     // Estado e registros
     FIFOF#(Tuple2#(Timeslot, Bit#(1))) fifo_out <- mkFIFOF;
@@ -60,7 +78,7 @@ module mkE1Unframer(E1Unframer);
                         cur_bit <= 0;
                     end
                 end
-                
+
                 // Inicialização do SYNCED STATE
                 SYNCED: begin
                     // Gerar saída para os timeslots TS1-TS31
