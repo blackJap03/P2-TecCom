@@ -26,9 +26,9 @@ module mkE1Unframer(E1Unframer);
     Reg#(Bit#(8)) cur_byte <- mkReg(0);
 
     // Sequências de FAS e NFAS
-    let FAS_PATTERN = 7'b0011011;
-    let NFAS_MASK = 7'b0111111; // O segundo bit deve ser 1
-    let NFAS_VALID = 7'b0100000;
+    let fas_pattern = 7'b0011011;
+    let nfas_mask = 7'b0111111; // O segundo bit deve ser 1
+    let nfas_valid = 7'b0100000;
 
     interface out = toGet(fifo_out);
 
@@ -39,7 +39,7 @@ module mkE1Unframer(E1Unframer);
             case (state)
                 UNSYNCED: begin
                     cur_ts <= 0;
-                    if (cur_byte[6:0] == FAS_PATTERN) begin
+                    if (cur_byte[6:0] == fas_pattern) begin
                         state <= FIRST_FAS;
                         cur_bit <= 0;
                     end
@@ -52,7 +52,7 @@ module mkE1Unframer(E1Unframer);
 
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um NFAS válido
-                        if ((cur_byte & NFAS_MASK) == NFAS_VALID) begin
+                        if ((cur_byte & nfas_mask) == nfas_valid) begin
                             state <= FIRST_NFAS;
                         end else begin
                             state <= UNSYNCED;
@@ -69,7 +69,7 @@ module mkE1Unframer(E1Unframer);
 
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um FAS válido
-                        if (cur_byte[6:0] == FAS_PATTERN) begin
+                        if (cur_byte[6:0] == fas_pattern) begin
                             state <= SYNCED;
                         end else begin
                             state <= UNSYNCED;
@@ -92,11 +92,11 @@ module mkE1Unframer(E1Unframer);
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um FAS ou NFAS válido
                         if (fas_turn) begin
-                            if (cur_byte[6:0] != FAS_PATTERN) begin
+                            if (cur_byte[6:0] != fas_pattern) begin
                                 state <= UNSYNCED;
                             end
                         end else begin
-                            if ((cur_byte & NFAS_MASK) != NFAS_VALID) begin
+                            if ((cur_byte & nfas_mask) != nfas_valid) begin
                                 state <= UNSYNCED;
                             end
                         end
