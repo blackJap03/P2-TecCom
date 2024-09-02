@@ -93,7 +93,7 @@ module mkE1Unframer(E1Unframer);
                                 state <= UNSYNCED;
                             end
                         end else begin
-                            if (cur_byte & nfas_mask != nfas_valid) begin
+                            if ((cur_byte & nfas_mask) != nfas_valid) begin
                                 state <= UNSYNCED;
                             end
                         end
