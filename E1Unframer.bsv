@@ -27,8 +27,8 @@ module mkE1Unframer(E1Unframer);
 
     // Sequências de FAS e NFAS
     let fas_pattern = 7'b0011011;
-    let nfas_mask = 7'b0111111; // O segundo bit deve ser 1
-    let nfas_valid = 7'b0100000;
+    let nfas_mask = 8'b01111111; // O segundo bit deve ser 1
+    let nfas_valid = 8'b01000000;
 
     interface out = toGet(fifo_out);
 
@@ -39,13 +39,12 @@ module mkE1Unframer(E1Unframer);
             case (state)
                 UNSYNCED: begin
                     cur_ts <= 0;
-                    if (cur_byte[6:0] == fas_pattern) begin
+                    if (cur_byte[7:1] == fas_pattern) begin
                         state <= FIRST_FAS;
                         cur_bit <= 0;
                     end
                 end
-
-                // Inicialização do FIRST FAS
+                
                 FIRST_FAS: begin
                     cur_ts <= cur_ts + 1;
                     cur_bit <= cur_bit + 1;
@@ -61,15 +60,14 @@ module mkE1Unframer(E1Unframer);
                         cur_bit <= 0;
                     end
                 end
-
-                // Inicialização do FIRST NFAS
+    
                 FIRST_NFAS: begin
                     cur_ts <= cur_ts + 1;
                     cur_bit <= cur_bit + 1;
 
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um FAS válido
-                        if (cur_byte[6:0] == fas_pattern) begin
+                        if (cur_byte[7:1] == fas_pattern) begin
                             state <= SYNCED;
                         end else begin
                             state <= UNSYNCED;
@@ -79,7 +77,6 @@ module mkE1Unframer(E1Unframer);
                     end
                 end
 
-                // Inicialização do SYNCED STATE
                 SYNCED: begin
                     // Gerar saída para os timeslots TS1-TS31
                     if (cur_ts != 0) begin
@@ -92,7 +89,7 @@ module mkE1Unframer(E1Unframer);
                     if (cur_ts == 30) begin
                         // Verificar se o próximo TS0 é um FAS ou NFAS válido
                         if (fas_turn) begin
-                            if (cur_byte[6:0] != fas_pattern) begin
+                            if (cur_byte[7:1] != fas_pattern) begin
                                 state <= UNSYNCED;
                             end
                         end else begin
