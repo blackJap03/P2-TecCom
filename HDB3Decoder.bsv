@@ -34,7 +34,32 @@ module mkHDB3Decoder(HDB3Decoder);
             let recent_symbols = tuple4(fifos[0].first, fifos[1].first, fifos[2].first, fifos[3].first);
             let value = 0;
 
-            // TODO: preencha aqui com a sua lógica
+            case (state)
+                IDLE_OR_S1:
+                    if (tpl_1(recent_symbols) == P || tpl_1(recent_symbols) == N) action
+                        // Um símbolo P ou N representa um bit 1
+                        value = 1;
+                    endaction else
+                    if (tpl_1(recent_symbols) == Z) action
+                        if (tpl_1(recent_symbols) == Z && tpl_2(recent_symbols) == Z &&
+                            (tpl_3(recent_symbols) == P || tpl_3(recent_symbols) == N) &&
+                            (tpl_4(recent_symbols) == P || tpl_4(recent_symbols) == N)) action
+                            // Identifica as sequências PZZP, NZZN, ZZZP, ZZZN como 0000
+                            value = 0;
+                            state <= S2;
+                        endaction
+                    endaction
+                S2, S3, S4:
+                    action
+                        // Nos estados S2, S3 e S4, continuamos processando os bits 0
+                        value = 0;
+                        state <= (state == S2) ? S3 : (state == S3) ? S4 : IDLE_OR_S1;
+                    endaction
+            endcase
+
+            $display("HDB3Decoder: recent_symbols = ", fshow(recent_symbols),
+                     ", value = ", fshow(value),
+                     ", state = ", fshow(state));
 
             fifos[0].deq;
             return value;
