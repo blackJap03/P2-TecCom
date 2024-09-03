@@ -37,26 +37,29 @@ module mkHDB3Decoder(HDB3Decoder);
             case (state) // escolhe a ação baseado no state
                 IDLE_OR_S1:
                     // Um símbolo P ou N representa um bit 1
-                    if (tpl_1(recent_symbols) == P || tpl_1(recent_symbols) == N) action
+                    if (
+                        recent_symbols == tuple4(P, Z, Z, P) ||
+                        recent_symbols == tuple4(N, Z, Z, N)
+                    ) action
+                        state <= S2;
+                        last_pulse_p <= !last_pulse_p;
+                    endaction else if (
+                        (last_pulse_p && recent_symbols == tuple4(Z, Z, Z, P)) ||
+                        (!last_pulse_p && recent_symbols == tuple4(Z, Z, Z, N))
+                    ) action
+                        state <= S2;
+                    endaction else if (tpl_1(recent_symbols) == P || tpl_1(recent_symbols) == N) action
                         value = 1;
-                    endaction else
-                    // Identifica as sequências PZZP, NZZN, ZZZP, ZZZN como 0000
-                    if (tpl_1(recent_symbols) == Z) action
-                        if (tpl_1(recent_symbols) == Z && tpl_2(recent_symbols) == Z &&
-                            (tpl_3(recent_symbols) == P || tpl_3(recent_symbols) == N) &&
-                            (tpl_4(recent_symbols) == P || tpl_4(recent_symbols) == N)) action
-                            value = 0;
-                            state <= S2;
-                        endaction
-                    endaction
+                        last_pulse_p <= tpl_1(recent_symbols) == P ? True : False;
+                    endaction 
                 S2, S3, S4:
                     action
                         // Nos estados S2, S3 e S4, continuamos processando os bits 0
                         value = 0;
-                        state <= (state == S2) ? S3 : (state == S3) ? S4 : IDLE_OR_S1;
+                        state <= (state == S2) ? S3 : ((state == S3) ? S4 : IDLE_OR_S1);
                     endaction
             endcase
-            
+
             fifos[0].deq;
             return value;
         endmethod
