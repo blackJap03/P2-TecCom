@@ -10,89 +10,115 @@ interface E1Unframer;
 endinterface
 
 typedef enum {
-    UNSYNCED,
+    UNSYNCED, 
     FIRST_FAS,
     FIRST_NFAS,
     SYNCED
 } State deriving (Bits, Eq, FShow);
 
 module mkE1Unframer(E1Unframer);
-    // FIFO para a saída
     FIFOF#(Tuple2#(Timeslot, Bit#(1))) fifo_out <- mkFIFOF;
-    
-    // Estados
-    Reg#(State) state <- mkReg(UNSYNCED);
-    Reg#(Bit#(TLog#(8))) cur_bit <- mkRegU;
-    Reg#(Timeslot) cur_ts <- mkRegU;
-    Reg#(Bool) fas_turn <- mkReg(False);
-    Reg#(Bit#(8)) cur_byte <- mkReg(0);
-
-    // Sequências FAS e NFAS (ajustadas para Bit#(8))
-    Bit#(8) fas = 8'b00110110; // note que foi ajustado para 8 bits
-    Bit#(2) nfas_valid = 2'b10;
-
-    // Regra única para atualizar cur_ts
-    rule update_cur_ts;
-        if (cur_bit == 7) begin
-            cur_ts <= cur_ts + 1;
-        end
-    endrule
+    Reg#(State) current_state <- mkReg(UNSYNCED);
+    Reg#(Bit#(TLog#(8))) current_bit_index <- mkRegU;
+    Reg#(Timeslot) current_ts <- mkRegU;
+    Reg#(Bool) fas_turn <- mkRegU;
+    Reg#(Bit#(8)) current_byte <- mkReg(0);
 
     interface out = toGet(fifo_out);
 
     interface Put in;
         method Action put(Bit#(1) b);
-            // Desloca os bits em cur_byte para a esquerda e insere o novo bit
-            cur_byte <= (cur_byte << 1) | zeroExtend(b);
-            
-            if (cur_bit == 7) begin
-                cur_bit <= 0;
-            end else begin
-                cur_bit <= cur_bit + 1;
-            end
+            let new_byte = {current_byte[6:0], b};
 
-            case (state)
-                UNSYNCED: begin
-                    if (cur_byte == fas) begin
-                        state <= FIRST_FAS;
-                        cur_ts <= 0;
-                    end
-                end
+            case (current_state)
+                // Estado inicial onde a sincronização não foi obtida
+                UNSYNCED:
+                    if (new_byte[6:0] == 7'b0011011) action
+                        current_state <= FIRST_FAS;
+                        current_bit_index <= 0;
+                        current_ts <= 1;
+                        fas_turn <= True;
+                    endaction
+                // Estado após encontrar o primeiro FAS    
+                FIRST_FAS:
+                    if (current_ts == 0 && current_bit_index == 7) action
+                        if (new_byte[6] == 1) action
+                            current_state <= FIRST_NFAS;
+                            current_bit_index <= 0;
+                            current_ts <= 1;
+                            fas_turn <= False;
+                        endaction
+                        else action
+                            current_state <= UNSYNCED;
+                        endaction
+                    endaction
+                    else if (current_bit_index == 7) action
+                        current_ts <= current_ts + 1;
+                        current_bit_index <= 0;
+                    endaction
+                    else action
+                        current_bit_index <= current_bit_index + 1;
+                    endaction
+                // Estado após encontrar o primeiro NFAS
+                FIRST_NFAS:
+                    if (current_ts == 0 && current_bit_index == 7) action
+                        if (new_byte[6:0] == 7'b0011011) action
+                            current_state <= SYNCED;
+                            current_bit_index <= 0;
+                            current_ts <= 1;
+                            fas_turn <= True;
+                        endaction
+                        else action
+                            current_state <= UNSYNCED;
+                        endaction
+                    endaction
+                    else if (current_bit_index == 7) action
+                        current_ts <= current_ts + 1;
+                        current_bit_index <= 0;
+                    endaction
+                    else action
+                        current_bit_index <= current_bit_index + 1;
+                    endaction
+                // Estado onde a sincronização foi obtida e mantida
+                SYNCED:
+                    action
+                        if (current_ts == 0 && current_bit_index == 7) action
+                            if (fas_turn) action
+                                // Próximo é NFAS
+                                if (new_byte[6] == 1) action
+                                    current_bit_index <= 0;
+                                    current_ts <= 1;
+                                    fas_turn <= False;
+                                endaction
+                                else action
+                                    current_state <= UNSYNCED;
+                                endaction
+                            endaction
+                            else action
+                                // Próximo é NFAS
+                                if (new_byte[6:0] == 7'b0011011) action
+                                    current_bit_index <= 0;
+                                    current_ts <= 1;
+                                    fas_turn <= True;
+                                endaction
+                                else action
+                                    current_state <= UNSYNCED;
+                                endaction
+                            endaction
+                        endaction
+                        else if (current_bit_index == 7) action
+                            current_ts <= current_ts + 1;
+                            current_bit_index <= 0;
+                        endaction
+                        else action
+                            current_bit_index <= current_bit_index + 1;
+                        endaction
 
-                FIRST_FAS: begin
-                    if (cur_ts == 31) begin
-                        if (cur_byte[6:5] == nfas_valid) begin
-                            state <= FIRST_NFAS;
-                        end else begin
-                            state <= UNSYNCED;
-                        end
-                    end
-                end
-
-                FIRST_NFAS: begin
-                    if (cur_ts == 31) begin
-                        if (cur_byte == fas) begin
-                            state <= SYNCED;
-                        end else begin
-                            state <= UNSYNCED;
-                        end
-                    end
-                end
-
-                SYNCED: begin
-                    if (cur_ts == 0) begin
-                        // Verifica TS0 para fas/NFAS
-                        if ((fas_turn && cur_byte != fas) || (!fas_turn && cur_byte[6:5] != nfas_valid)) begin
-                            state <= UNSYNCED;
-                        end
-                        fas_turn <= !fas_turn;
-                    end else begin
-                        // Produz saída válida para TS1-31
-                        fifo_out.enq(tuple2(cur_ts, b));
-                    end
-                end
+                        fifo_out.enq(tuple2(current_ts, b));
+                    endaction
             endcase
+
+            current_byte <= new_byte;
         endmethod
     endinterface
-
 endmodule
