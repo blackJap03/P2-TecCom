@@ -56,12 +56,7 @@ module mkHDB3Decoder(HDB3Decoder);
                         state <= (state == S2) ? S3 : (state == S3) ? S4 : IDLE_OR_S1;
                     endaction
             endcase
-
-            // Exibe informações
-            $display("HDB3Decoder: recent_symbols = ", fshow(recent_symbols),
-                     ", value = ", fshow(value),
-                     ", state = ", fshow(state));
-
+            
             fifos[0].deq;
             return value;
         endmethod
