@@ -1,5 +1,12 @@
 # Interface E1
 
+Grupo:
+Bruno Kenzo Yui               RA: 770843
+Leonardo Rossi Dourado        RA: 800208
+Rodrigo Takizawa Yamauchi     RA: 800226
+Samuel Abel Said              RA: 800209
+Victor Vendrera Vieira        RA: 801645
+
 ## Introdução
 
 Nesta prática, vamos implementar uma interface [E1](https://web.fe.up.pt/~mleitao/STEL/Tecnico/E1_ACTERNA.pdf) ligada a uma lógica capaz de responder pings (ICMP) sobre IPv4 sobre HDLC.
