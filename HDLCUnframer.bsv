@@ -7,7 +7,6 @@ interface HDLCUnframer;
     interface Get#(Tuple2#(Bool, Bit#(8))) out;
 endinterface
 
-// Estados do desemoldurador HDLC
 typedef enum {
     IDLE,               
     PROCESS_FRAME,      
@@ -73,8 +72,7 @@ module mkHDLCUnframer(HDLCUnframer);
                         next_bit_index = bit_index;
                     endaction
             endcase
-
-            // Atualiza as variáveis de estado e bits
+            // Atualização 
             recent_bits <= updated_recent_bits;
             bit_index <= next_bit_index;
             current_state <= next_state;
