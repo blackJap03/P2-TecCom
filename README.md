@@ -2,9 +2,13 @@
 
 Grupo:
 Bruno Kenzo Yui               RA: 770843
+
 Leonardo Rossi Dourado        RA: 800208
+
 Rodrigo Takizawa Yamauchi     RA: 800226
+
 Samuel Abel Said              RA: 800209
+
 Victor Vendrera Vieira        RA: 801645
 
 ## Introdução
