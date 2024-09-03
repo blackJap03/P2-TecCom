@@ -96,7 +96,8 @@ module mkE1Unframer(E1Unframer);
                         end else begin
                             // Verificar se a máscara corresponde ao valor esperado para NFAS
                             Bit#(8) nfas_check = cur_byte & nfas_mask;
-                            if (nfas_check != nfas_valid) begin
+                            Bool nfas_valid_check = nfas_check == nfas_valid; // Comparação como booleano
+                            if (!nfas_valid_check) begin
                                 state <= UNSYNCED;
                             end
                         end
