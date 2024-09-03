@@ -114,6 +114,7 @@ module mkThreeLevelIO#(Bool sync_to_line_clock)(ThreeLevelIO);
             if (sync_to_line_clock) begin
                 let positive_edge = rxp_sync[1:0] == 'b01 || rxn_sync[1:0] == 'b01;  // {current_bit, previous_bit}
 
+                // Borda de subida detectada
                 if (positive_edge) begin
                     let expected_value = counter_reset_value >> 2;
                     
